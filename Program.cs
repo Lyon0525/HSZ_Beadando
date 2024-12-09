@@ -6,32 +6,37 @@ using System.Threading.Tasks;
 using HSZ_Beadando_DLL;
 
 namespace HSZ_Beadando {
+    
     internal class Program {
-        static Reaktor reactor = new Reaktor(0,0,0);
+        static Reaktor reactor = new Reaktor(0,0,0); 
+        
         static void Main(string[] args) {
             try {
+                //Random szám feltöltés: Kristóf
                 Random r = new Random();
                 reactor = new Reaktor(r.Next(5, 11), r.Next(4, 6), r.Next(550, 651));
                 for (int i = 0; i < 24; i++) { //1 perc
                     if (i % 3 == 0) {
-                        reactor.NyomasAllitas(0 - r.NextDouble());
-                        reactor.EnergiaValtozas(0 - r.NextDouble());
-                        reactor.Homersekletallitas(0 - r.NextDouble());
+                        reactor.Delegalt(true);
                     }
                     else {
-                        reactor.NyomasAllitas(r.NextDouble() / 2);
-                        reactor.EnergiaValtozas(r.NextDouble() / 2);
-                        reactor.Homersekletallitas(r.NextDouble() * 2);
+                        reactor.Delegalt(false);
                     }
                     reactor.Kiiras();
                 }
-                
+                //Delegált: Zoli
 
+                //Linq: Zoli
             }
             catch (Exception ex) {
                 Console.WriteLine($"Hiba történt: {ex.Message}");
             }
             Console.ReadKey();
+            /*delegált használata
+            • eseménykezelés(legalább egy eseményé)
+            • a mérési adatok elhelyezése adatbázisban
+            • a mérési adatok kiírása JSON fájlba
+            • legalább 3 LINQ lekérdezés megvalósítása*/
         }
     }
 }
