@@ -12,16 +12,25 @@ namespace HSZ_Beadando {
         static Reaktor reactor = new Reaktor(0,0,0); 
         
         static void Main(string[] args) {
-            try {
+            try
+            {
+                //Event hozzáadás
+                reactor.HomersekletTullepes += (homerseklet) =>
+                {
+                    Console.WriteLine($"Figyelem! A hőmérséklet elérte a kritikus szintet: {homerseklet} °C");
+                };
                 //Random szám feltöltés: Kristóf
                 Random r = new Random();
                 reactor = new Reaktor(r.Next(5, 11), r.Next(4, 6), r.Next(550, 651));
-                for (int i = 0; i < 24; i++) { //1 perc
+                for (int i = 0; i < 24; i++)
+                { //1 perc
                     //Delegált: Zoli
-                    if (i % 3 == 0) {
+                    if (i % 3 == 0)
+                    {
                         reactor.Delegalt(true);
                     }
-                    else {
+                    else
+                    {
                         reactor.Delegalt(false);
                     }
                     reactor.Kiiras();
@@ -52,15 +61,31 @@ namespace HSZ_Beadando {
                 Console.WriteLine($"Átlag feletti megtermelt energia értékek száma: {energiaAtlagFelettiIdopontok.Count}");
                 Console.WriteLine("Átlag feletti értékek és az időpontjaik:");
                 foreach (var item in energiaAtlagFelettiIdopontok) Console.WriteLine($"Érték: {item.Ertek} MW, Időpont: {item.Ora}. óra");
-                
 
+                string connectionString = "Data Source=reaktor_adatok.db;Version=3;";
+
+                using (var connection = new SQLiteConnection(connectionString))
+                {
+                    connection.Open();
+                    var command = connection.CreateCommand();
+                    command.CommandText = @"
+                    CREATE TABLE IF NOT EXISTS MeresiAdatok (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        VizNyomas REAL,
+                        MegtermeltEnergia REAL,
+                        Homerseklet REAL,
+                        Idopont DATETIME DEFAULT CURRENT_TIMESTAMP
+                    );
+                ";
+                    command.ExecuteNonQuery();
+                }
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 Console.WriteLine($"Hiba történt: {ex.Message}");
             }
             Console.ReadKey();
             /*
-            • eseménykezelés(legalább egy eseményé)
             • a mérési adatok elhelyezése adatbázisban
             • a mérési adatok kiírása JSON fájlba
             • legalább 3 LINQ lekérdezés megvalósítása*/
