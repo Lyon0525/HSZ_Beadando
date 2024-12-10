@@ -44,7 +44,15 @@ namespace HSZ_Beadando {
                                  });
                 Console.WriteLine("Minden 6 elem minimuma és maximuma (0 kihagyva):");
                 foreach (var item in minmax) Console.WriteLine($"Minimum: {item.Minimum}, Maximum: {item.Maximum}");
-
+                var energiaAtlag = reactor.MegtermeltEnergiaLog.Average();
+                var energiaAtlagFelettiIdopontok = reactor.MegtermeltEnergiaLog
+                    .Select((value, index) => new { Ertek = value, Ora = index })
+                    .Where(x => x.Ertek > energiaAtlag)
+                    .ToList();
+                Console.WriteLine($"Átlag feletti megtermelt energia értékek száma: {energiaAtlagFelettiIdopontok.Count}");
+                Console.WriteLine("Átlag feletti értékek és az időpontjaik:");
+                foreach (var item in energiaAtlagFelettiIdopontok) Console.WriteLine($"Érték: {item.Ertek} MW, Időpont: {item.Ora}. óra");
+                
 
             }
             catch (Exception ex) {
