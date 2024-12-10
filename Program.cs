@@ -4,14 +4,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Data.SQLite;
+using Microsoft.Data.Sqlite;
 using HSZ_Beadando_DLL;
 
 namespace HSZ_Beadando {
-    
+    //JSON osztály
+    public class MeresiAdat {
+        public double VizNyomas { get; set; }
+        public double MegtermeltEnergia { get; set; } 
+        public double Homerseklet { get; set; }
+        public DateTime Idopont { get; set; } 
+    }
     internal class Program {
         static Reaktor reactor = new Reaktor(0,0,0); 
-        
         static void Main(string[] args) {
             try
             {
@@ -23,6 +28,7 @@ namespace HSZ_Beadando {
                 //Random szám feltöltés: Kristóf
                 Random r = new Random();
                 reactor = new Reaktor(r.Next(5, 11), r.Next(4, 6), r.Next(550, 651));
+                AdatBeszuras(reactor.VizNyomas, reactor.MegtermeltEnergia, reactor.Homerseklet);
                 for (int i = 0; i < 24; i++)
                 { //1 perc
                     //Delegált: Zoli
@@ -35,6 +41,7 @@ namespace HSZ_Beadando {
                         reactor.Delegalt(false);
                     }
                     reactor.Kiiras();
+                    AdatBeszuras(reactor.VizNyomas, reactor.MegtermeltEnergia, reactor.Homerseklet);
                 }
                 //Linq: Zoli
                 var atlagok = reactor.HomersekletLog.Skip(1) //első elem az alap elem
@@ -63,9 +70,8 @@ namespace HSZ_Beadando {
                 Console.WriteLine("Átlag feletti értékek és az időpontjaik:");
                 foreach (var item in energiaAtlagFelettiIdopontok) Console.WriteLine($"Érték: {item.Ertek} MW, Időpont: {item.Ora}. óra");
 
-                string connectionString = "Data Source=reaktor_adatok.db;Version=3;";
-
-                using (var connection = new SQLiteConnection(connectionString))
+                //Adatbázis
+                using (var connection = new SqliteConnection(connectionString))
                 {
                     connection.Open();
                     var command = connection.CreateCommand();
@@ -90,6 +96,39 @@ namespace HSZ_Beadando {
             • a mérési adatok elhelyezése adatbázisban
             • a mérési adatok kiírása JSON fájlba
             • legalább 3 LINQ lekérdezés megvalósítása*/
+        }
+        static string connectionString = "Data Source=reaktor_adatok.db;Version=3;";
+        static void AdatBeszuras(double vizNyomas, double megtermeltEnergia, double homerseklet)
+        {
+            using (var connection = new SqliteConnection(connectionString))
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText = @"
+                INSERT INTO MeresiAdatok (VizNyomas, MegtermeltEnergia, Homerseklet) 
+                VALUES (@vizNyomas, @megtermeltEnergia, @homerseklet);
+            ";
+                command.Parameters.AddWithValue("@vizNyomas", vizNyomas);
+                command.Parameters.AddWithValue("@megtermeltEnergia", megtermeltEnergia);
+                command.Parameters.AddWithValue("@homerseklet", homerseklet);
+                command.ExecuteNonQuery();
+            }
+        }
+        static void AdatokLekerdezese()
+        {
+            using (var connection = new SqliteConnection(connectionString))
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText = "SELECT * FROM MeresiAdatok;";
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        Console.WriteLine($"Id: {reader["Id"]}, Nyomás: {reader["VizNyomas"]} MPa, Energia: {reader["MegtermeltEnergia"]} MW, Hőmérséklet: {reader["Homerseklet"]} °C, Időpont: {reader["Idopont"]}");
+                    }
+                }
+            }
         }
     }
 }
