@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
 using HSZ_Beadando_DLL;
+using Newtonsoft.Json;
+using System.IO;
 
 namespace HSZ_Beadando {
     //JSON osztály
@@ -13,10 +14,11 @@ namespace HSZ_Beadando {
         public double VizNyomas { get; set; }
         public double MegtermeltEnergia { get; set; } 
         public double Homerseklet { get; set; }
-        public DateTime Idopont { get; set; } 
+        public int Idopont { get; set; } 
     }
     internal class Program {
         static Reaktor reactor = new Reaktor(0,0,0); 
+        static new List<MeresiAdat> meresiAdatok = new List<MeresiAdat>(); //JSON lista
         static void Main(string[] args) {
             try
             {
@@ -28,7 +30,14 @@ namespace HSZ_Beadando {
                 //Random szám feltöltés: Kristóf
                 Random r = new Random();
                 reactor = new Reaktor(r.Next(5, 11), r.Next(4, 6), r.Next(550, 651));
-                AdatBeszuras(reactor.VizNyomas, reactor.MegtermeltEnergia, reactor.Homerseklet);
+                AdatBeszuras(reactor.VizNyomas, reactor.MegtermeltEnergia, reactor.Homerseklet); //SQL-be szúrás 
+                meresiAdatok.Add(new MeresiAdat
+                {
+                    VizNyomas = reactor.VizNyomas,
+                    MegtermeltEnergia = reactor.MegtermeltEnergia,
+                    Homerseklet = reactor.Homerseklet,
+                    Idopont = 0
+                }); //JSON listához adás
                 for (int i = 0; i < 24; i++)
                 { //1 perc
                     //Delegált: Zoli
@@ -42,6 +51,13 @@ namespace HSZ_Beadando {
                     }
                     reactor.Kiiras();
                     AdatBeszuras(reactor.VizNyomas, reactor.MegtermeltEnergia, reactor.Homerseklet);
+                    meresiAdatok.Add(new MeresiAdat
+                    {
+                        VizNyomas = reactor.VizNyomas,
+                        MegtermeltEnergia = reactor.MegtermeltEnergia,
+                        Homerseklet = reactor.Homerseklet,
+                        Idopont = i + 1
+                    });
                 }
                 //Linq: Zoli
                 var atlagok = reactor.HomersekletLog.Skip(1) //első elem az alap elem
@@ -70,8 +86,8 @@ namespace HSZ_Beadando {
                 Console.WriteLine("Átlag feletti értékek és az időpontjaik:");
                 foreach (var item in energiaAtlagFelettiIdopontok) Console.WriteLine($"Érték: {item.Ertek} MW, Időpont: {item.Ora}. óra");
 
-                //Adatbázis
-                using (var connection = new SqliteConnection(connectionString))
+                //Adatbázis Kristóf
+                using (var connection = new SQLiteConnection(connectionString))
                 {
                     connection.Open();
                     var command = connection.CreateCommand();
@@ -86,21 +102,24 @@ namespace HSZ_Beadando {
                 ";
                     command.ExecuteNonQuery();
                 }
+
+                //JSON Kristóf
+                string jsonString = JsonConvert.SerializeObject(meresiAdatok, Formatting.Indented);
+                StreamWriter writer = new StreamWriter("Json.txt");
+                writer.WriteLine(jsonString);
+                writer.Flush();
+                writer.Close();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Hiba történt: {ex.Message}");
             }
             Console.ReadKey();
-            /*
-            • a mérési adatok elhelyezése adatbázisban
-            • a mérési adatok kiírása JSON fájlba
-            • legalább 3 LINQ lekérdezés megvalósítása*/
         }
-        static string connectionString = "Data Source=reaktor_adatok.db;Version=3;";
+        static string connectionString = "Data Source=reaktor_adatok.db;";
         static void AdatBeszuras(double vizNyomas, double megtermeltEnergia, double homerseklet)
         {
-            using (var connection = new SqliteConnection(connectionString))
+            using (var connection = new SQLiteConnection(connectionString))
             {
                 connection.Open();
                 var command = connection.CreateCommand();
@@ -116,7 +135,7 @@ namespace HSZ_Beadando {
         }
         static void AdatokLekerdezese()
         {
-            using (var connection = new SqliteConnection(connectionString))
+            using (var connection = new SQLiteConnection(connectionString))
             {
                 connection.Open();
                 var command = connection.CreateCommand();
